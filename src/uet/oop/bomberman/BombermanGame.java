@@ -2,6 +2,7 @@ package uet.oop.bomberman;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -10,8 +11,13 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import javafx.stage.WindowEvent;
 import uet.oop.bomberman.GameControl.Player;
 import uet.oop.bomberman.Level.Map;
 import uet.oop.bomberman.entities.*;
@@ -21,6 +27,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class BombermanGame extends Application {
     
@@ -39,6 +46,9 @@ public class BombermanGame extends Application {
 
     private String Level;
     private Player player = new Player();
+    private Font font;
+    private Text Time = new Text();
+    private Text Score = new Text();
 
 
     public static void main(String[] args) {
@@ -53,18 +63,12 @@ public class BombermanGame extends Application {
         map = new Map(Level);
         map.insertFromFile(Level);
         createMap();
-        /*
-        try {
-            String musicFile = "backgroundMusic.mp3";
-            System.out.println(new File(musicFile).toURI().toString());
-            Media sound = new Media(new File(musicFile).toURI().toString());
-            //Media sound = new Media("C:/Users/ASUS/IdeaProject/bomberman-starter/backgroundMusic.mp3");
-            MediaPlayer mediaPlayer = new MediaPlayer(sound);
-            mediaPlayer.play();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
 
+        String musicFile = "bomb_explosion.wav";
+        Media sound = new Media(new File(musicFile).toURI().toString());
+        MediaPlayer mediaPlayer = new MediaPlayer(sound);
+        mediaPlayer.play();
+        
         // Tao Canvas
         canvas = new Canvas(Sprite.SCALED_SIZE * WIDTH, Sprite.SCALED_SIZE * HEIGHT);
         gc = canvas.getGraphicsContext2D();
@@ -77,6 +81,37 @@ public class BombermanGame extends Application {
         // Tao root container
         Group root = new Group();
         root.getChildren().addAll(canvas, canvas1);
+
+        font = Font.font("Consolas", FontWeight.BOLD, 18);
+
+        Time.setX(150);
+        Time.setY(20);
+        Time.setFill(Color.WHITE);
+        Time.setFont(font);
+
+        Score.setText("Score: 0");
+        Score.setX(700);
+        Score.setY(20);
+        Score.setFill(Color.WHITE);
+        Score.setFont(font);
+
+
+
+        Thread time = new Thread() {
+            public void run() {
+                for (int i = 200; i >= 0; i--) {
+                    Time.setText("Time: " + i);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        time.start();
+
+        root.getChildren().addAll(Time, Score);
 
         // Tao scene
         Scene scene = new Scene(root);
@@ -99,6 +134,12 @@ public class BombermanGame extends Application {
                         break;
                     case RIGHT:
                         player.RightPressed = true;
+                        break;
+                    case SPACE:
+                        Bomber bomber = new Bomber((int) player.x / Sprite.SCALED_SIZE,(int) player.y / Sprite.SCALED_SIZE, Sprite.bomb.getFxImage());
+                        stillObjects1.add(bomber);
+                        stillObjects1.remove(player);
+                        stillObjects1.add(player);
                         break;
                 }
                 render1();
@@ -125,6 +166,14 @@ public class BombermanGame extends Application {
                 }
                 render1();
                 update1();
+            }
+        });
+
+        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent windowEvent) {
+                Platform.exit();
+                System.exit(0);
             }
         });
 
